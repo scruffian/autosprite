@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Sprite Generator</title>
+		<style>
+			*					{border: none; margin:0; padding:0;}
+			html				{background:#f5f5f5;font-family:Georgia,serif;text-align:center;}
+			body				{background:#fff; color:#333; font-size: 0.75em; padding: 3em; text-align:left; }
+
+			h1,h2,h3			{font-family:Arial,sans-serif; margin:1em 0; text-transform: uppercase;}
+			h1					{margin:0;}
+			h2					{border-top: 1px solid #999; color:#666; font-weight:normal; margin:2em 0 0 0; padding:2em 0 .5em 0;}		
+			h3					{color:#666; display: inline; font-size:1.2em; margin:2em 0 .5em 0; padding:0 0 .5em 0;}
+			h4,h5				{margin:1em 0 0 0;}
+			h5					{font-size: 1em; font-weight:normal; text-align:right;}
+
+			ul					{clear:both;}
+			ul li, ol li		{line-height: 4em; position: relative;}
+			ul li				{list-style:none}
+			ol li ul li			{list-style:none; margin:0; padding: 0;}
+			p					{line-height: 2em; margin:-3em 0 2em 20em; overflow:auto;}
+			input				{padding:0.5em;}
+			.submit				{margin:0 0 0 20em;}
+
+			input,textarea		{border:1px solid #999;}
+			label				{float: left; width: 20em;}
+			.results			{float:left;height:100px;width:45%;margin: 0 1em 0 0;}
+			
+			ol.sprites li		{border-bottom:1px solid #666; margin:0 0 1em 0;}
+			ol.sprites li ul li	{border-bottom:none;}
+			
+			.toggle				{margin:0 0 0 1em;}
+			.hide				{display:none;}
+			
+			.preview-area-image-wrapper { overflow: hidden;}
+			
+			#spritePreview		{height:100px; overflow:hidden; width:100px;}
+		</style>
+		<link rel="stylesheet" type="text/css" href="css/imgareaselect-default.css" />
+		<script src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.js" type="text/javascript"></script>
+		<script src="jquery.imgareaselect.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			function previewSprite(img, selection) {
+				if (!selection.width || !selection.height)
+				return;
+
+				var scaleX = 100 / selection.width;
+				var scaleY = 100 / selection.height;
+
+				$('#spritePreview img').css({
+					width: Math.round(scaleX * 300),
+					height: Math.round(scaleY * 300),
+					marginLeft: -Math.round(scaleX * selection.width),
+					marginTop: -Math.round(scaleY * selection.height)
+				});
+
+				$('#spriteWidth').val(selection.width);
+				$('#spriteHeight').val(selection.height);
+				$('#spriteXPosition').val(selection.x1);
+				$('#spriteYPosition').val(selection.y1);    
+			}
+			function newSprite(){
+				var spriteWidth = $('#spriteWidth').val();
+				var spriteHeight = $('#spriteHeight').val();
+				var spriteXPosition = $('#spriteXPosition').val();
+				var spriteYPosition = $('#spriteYPosition').val();    
+				var spriteText = $('#spriteText').val();    
+				var spriteLink = $('#spriteLink').val();    
+
+				var spriteMarkup = '<li>';
+				spriteMarkup 	+= '<h3>Sprite Settings</h3>';
+				spriteMarkup 	+= '<a href="#" class="toggle hide">hide</a><a href="#" class="toggle">show</a>';
+				spriteMarkup 	+= '<ul class="hide">';
+				spriteMarkup 	+= '<li><label>Dimensions:</label><input type="text" class="spriteWidth" value="' + spriteWidth + '" /> px by <input type="text" class="spriteHeight" value="' + spriteHeight + '" /> px</li>';
+				spriteMarkup 	+= '<li><label>Position:</label><input type="text" class="spriteXPosition" value="' + spriteXPosition + '" /> px from left by <input type="text" class="spriteYPosition" value="' + spriteYPosition + '" /> px from top</li>';
+				spriteMarkup 	+= '<li><label>Link:</label><input type="text" class="spriteHref" value="' + spriteLink + '" /></li>';
+				spriteMarkup 	+= '<li><label>Text:</label><textarea class="spriteText">' + spriteText + '</textarea></li>';
+				spriteMarkup 	+= '</ul>';
+				spriteMarkup 	+= '</li>';
+				$("ol.sprites").append(spriteMarkup);
+			}
+			$(document).ready(function(){
+				$("#clear").click(function() {
+					$("input[type=text]").val("");
+					$("textarea").val("");
+					$("#results").html("");
+					$("ol.sprites").empty();
+					$("#preview-area").empty();
+				});
+				$("#generate-markup").click(function() {
+					var imageWidth = parseFloat($("#imageWidth").val()),
+						imageHeight = parseFloat($("#imageHeight").val()),
+						imageUrl = $("#imageUrl").val(),
+						imageText = $("#imageText").val();
+						imageName = $("#imageName").val();
+						css = "",
+						html = "";
+					if(isNaN(imageWidth) || isNaN(imageHeight)){
+						alert('Not all image dimensions are defined');
+						return false;
+					}
+					css =	"<style type=\"text/css\">"+
+							"#"+imageName+".sprite-parent span{background:url("+imageUrl+");}"+
+							"#"+imageName+".sprite-parent{height:"+imageHeight+"px;position:relative;width:"+imageWidth+"px}"+
+							"#"+imageName+".sprite-parent span{height:"+imageHeight+"px;width:"+imageWidth+"px; top: 0; left: 0;}"+
+							"#"+imageName+" .sprite{position: absolute;z-index:1;}"+
+							".replace{margin:0px; padding:0px; /* hide overflow:hidden from IE5/Mac */ /* \*/ overflow: hidden; /* */ } .replace span{ display:block; position:absolute; top:0px; left:0px; z-index:1; /*for Opera 5 and 6*/ }";
+					html =	'<div id="' + imageName + '" class="sprite-parent replace">'+imageText+"<span></span>";
+					$("ol.sprites > li").each(function(i) {
+						var spriteWidth = parseFloat($(this).find(".spriteWidth").val()),
+							spriteHeight = parseFloat($(this).find(".spriteHeight").val()),
+							spriteXPosition = parseFloat($(this).find(".spriteXPosition").val()),
+							spriteYPosition = parseFloat($(this).find(".spriteYPosition").val()),
+							spriteText = $(this).find(".spriteText").val();
+							spriteHref = $(this).find(".spriteHref").val();
+							if(isNaN(spriteWidth) || isNaN(spriteHeight) || isNaN(spriteXPosition) || isNaN(spriteYPosition)){
+								alert('Not all sprite values are defined');
+								return false;
+							}	
+						css +=	"#"+imageName+" #sprite"+(i+1)+" {width: "+spriteWidth+"px; height: "+spriteHeight+"px; left: "+spriteXPosition+"px; top: "+spriteYPosition+"px;}"+
+								"#"+imageName+" #sprite"+(i+1)+" span{width: "+spriteWidth+"px; height: "+spriteHeight+"px; background-position: -"+spriteXPosition+"px -"+spriteYPosition+"px;}"+
+								"#"+imageName+" #sprite"+(i+1)+":hover span{background-position: -"+spriteXPosition+"px -"+(spriteYPosition+imageHeight)+"px;}";
+						html +=	'<a href="'+spriteHref+'" id="sprite'+(i+1)+'" class="sprite replace">'+spriteText+'<span></span></a>';
+					});
+					html +=	'</div>';
+					css +=	'</style>';
+					$("#css").text(css);
+					$("#html").text(html);
+					$("#results").html(css+html);
+					return false;
+				});
+				$("#new-sprite").click(function(){
+					newSprite();
+					return false;
+				});
+				/*$("input[type=text]").live("click", function(){
+					this.select();
+				});
+				$("textarea").live("click", function(){
+					this.select();
+				});*/
+				$("#generate-demo").click(function() {
+					$("#clear").click();
+					$("#imageWidth").val('212');
+					$("#imageHeight").val('212');
+					$("#imageUrl").val('SPRITE_LOGO.gif');
+					$("#imageText").val('Sprite');
+					$("#imageName").val('Sprite');
+					
+					var spriteWidth = $('#spriteWidth').val("200");
+					var spriteHeight = $('#spriteHeight').val("200");
+					var spriteXPosition = $('#spriteXPosition').val("10");
+					var spriteYPosition = $('#spriteYPosition').val("10");
+					var spriteText = $('#spriteText').val("Enjoy Sprite");    
+					var spriteLink = $('#spriteLink').val("http://www.sprite.com");
+					newSprite();
+					$("#preview-image").click();
+					$("#generate-markup").click();
+					return false;
+				});
+				$("#preview-image").click(function() {
+					var imageUrl = $("#imageUrl").val();
+					$('#preview-area').html('<div class="preview-area-image-wrapper"><img id="sprite" src="'+imageUrl+'" /></div>');
+					$('#sprite').imgAreaSelect({ handles: true, onSelectChange: previewSprite, fadeSpeed: 200 }); 
+					$("#imageWidth").val($('#sprite').width());
+					$("#imageHeight").val($('#sprite').height()/2);
+					$(".preview-area-image-wrapper").css("height", $('#sprite').height()/2);
+					return false;
+				});
+				$(".toggle").live("click", function() {
+					$(this).toggleClass("hide");
+					$(this).siblings("ul").toggleClass("hide");
+					$(this).siblings(".toggle").toggleClass("hide");
+					return false;
+				});
+			});
+		</script>
+	</head>
+	<body>
+		<form>
+			<h1>Sprite Generator</h1>
+			<h2>How to use</h2>
+			<p>This system relies on one thing. The rollover vesion of your image must by directly beneath your original image.</p>
+			<h2>Image details</h2>
+			<ul>
+				<li><label>Url:</label><input type="text" name="imageUrl" id="imageUrl" value="url" /></li>
+				<li style="display: none;"><label>Dimensions:</label><input type="text" id="imageWidth" name="imageWidth" value="width" disabled="disabled" /> px by <input type="text" id="imageHeight" name="imageHeight" value="height" disabled="disabled" /> px</li>
+				<li><label>Text:</label><textarea type="text" id="imageText" name="imageText">If the image has any text on it put it here</textarea></li>
+				<li><label>Name:</label><input type="text" name="imageName" id="imageName" value="name" /> You need this if you have more than one of these on a page.</li>
+			</ul>
+			<div class="submit"><input type="button" id="preview-image" value="preview-image" name="preview-image"/></div>
+			<h2>Preview Image</h2>
+			<div id="preview-area">
+				
+			</div>
+			<div id="sprite-preview-area">
+				<h2>Sprite Preview</h2>
+				<ul>
+					<li><label>Dimensions:</label><input type="text" id="spriteWidth" value="" /> px by <input type="text" id="spriteHeight" value="" /> px</li>
+					<li><label>Position:</label><input type="text" id="spriteXPosition" value="" /> px from left by <input type="text" id="spriteYPosition" value="" /> px from top</li>
+					<li><label>Link:</label><input type="text" id="spriteLink" name="spriteLink" value="spritelink" /></li>
+					<li><label>Text:</label><textarea id="spriteText">If the sprite has any text on it put it here</textarea></li>
+				</ul>
+			</div>
+			<div class="submit"><input type="button" id="new-sprite" value="new-sprite" name="new-sprite"/></div>
+			<h2>Sprites</h2>
+			<p>On the preview above, select the area you want to be a sprite, then "new sprite".</p>
+			<ol class="sprites">
+			</ol>
+			<div class="submit">
+				<input type="button" id="generate-markup" value="generate-markup" name="generate-markup"/>
+				<input type="button" id="clear" value="clear" name="clear"/>
+			</div>
+			<h2>Your markup</h2>
+			<p>
+				<textarea id="css" class="results">CSS</textarea>
+				<textarea id="html" class="results">HTML</textarea>
+			<p>
+			<h2>Results</h2>
+			<div id="results">
+				<p>Nothing yet!</p>
+			</div>
+			<h2>Demo</h2>
+			<p><input type="submit" id="generate-demo" value="generate-demo" name="generate-demo"/></p>
+			<h2>About</h2>
+			<p>This tool will enable you to quickly create an image based layout with rollovers without relying on lots of different image files or javascript. It also populates text for you, so it's accessible</p>
+			<h2>Limitations</h2>
+			<p>Doesn't work well with overlapping rollover areas.</p>
+		</form>
+	</body>
+</html>
